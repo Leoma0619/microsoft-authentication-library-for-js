@@ -245,13 +245,15 @@ export class ResponseHandler {
         // refreshToken
         let cachedRefreshToken: RefreshTokenEntity | null = null;
         if (!StringUtils.isEmpty(serverTokenResponse.refresh_token)) {
+            const refreshTokenExpiresIn: number | undefined = (typeof serverTokenResponse?.refresh_token_expires_in === "string" ? parseInt(serverTokenResponse.refresh_token_expires_in, 10) : serverTokenResponse?.refresh_token_expires_in);
             cachedRefreshToken = RefreshTokenEntity.createRefreshTokenEntity(
                 this.homeAccountIdentifier,
                 env,
                 serverTokenResponse.refresh_token || Constants.EMPTY_STRING,
                 this.clientId,
                 serverTokenResponse.foci,
-                oboAssertion
+                oboAssertion,
+                refreshTokenExpiresIn
             );
         }
 
@@ -312,8 +314,10 @@ export class ResponseHandler {
         code?: string
     ): Promise<AuthenticationResult> {
         let accessToken: string = "";
+        let refreshToken: string = "";
         let responseScopes: Array<string> = [];
         let expiresOn: Date | null = null;
+        let refreshTokenExpiresOn: Date | null = null;
         let extExpiresOn: Date | undefined;
         let familyId: string = Constants.EMPTY_STRING;
 
@@ -327,6 +331,15 @@ export class ResponseHandler {
             responseScopes = ScopeSet.fromString(cacheRecord.accessToken.target).asArray();
             expiresOn = new Date(Number(cacheRecord.accessToken.expiresOn) * 1000);
             extExpiresOn = new Date(Number(cacheRecord.accessToken.extendedExpiresOn) * 1000);
+        }
+
+        if (cacheRecord.refreshToken) {
+            if(cacheRecord.refreshToken.cachedAt&& cacheRecord.refreshToken.expiresIn){
+                refreshTokenExpiresOn = new Date((Number(cacheRecord.refreshToken.cachedAt) + Number(cacheRecord.refreshToken.expiresIn)) * 1000);
+            }
+            if(cacheRecord.refreshToken.secret){
+                refreshToken = cacheRecord.refreshToken.secret
+            }
         }
 
         if (cacheRecord.appMetadata) {
@@ -344,6 +357,8 @@ export class ResponseHandler {
             idToken: idTokenObj ? idTokenObj.rawToken : Constants.EMPTY_STRING,
             idTokenClaims: idTokenObj ? idTokenObj.claims : {},
             accessToken: accessToken,
+            refreshToken: refreshToken,
+            refreshTokenExpiresOn: refreshTokenExpiresOn,
             fromCache: fromTokenCache,
             expiresOn: expiresOn,
             correlationId: request.correlationId,

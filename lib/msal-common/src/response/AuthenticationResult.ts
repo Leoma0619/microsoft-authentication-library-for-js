@@ -29,8 +29,10 @@ export type AuthenticationResult = {
     idToken: string;
     idTokenClaims: object;
     accessToken: string;
+    refreshToken?:string;
     fromCache: boolean;
     expiresOn: Date | null;
+    refreshTokenExpiresOn?: Date | null;
     tokenType: string;
     correlationId: string;
     extExpiresOn?: Date;

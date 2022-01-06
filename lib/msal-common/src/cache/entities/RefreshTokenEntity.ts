@@ -5,6 +5,7 @@
 
 import { CredentialEntity } from "./CredentialEntity";
 import { CredentialType } from "../../utils/Constants";
+import { TimeUtils } from "../../utils/TimeUtils";
 
 /**
  * REFRESH_TOKEN Cache
@@ -27,6 +28,8 @@ import { CredentialType } from "../../utils/Constants";
  */
 export class RefreshTokenEntity extends CredentialEntity {
     familyId?: string;
+    cachedAt?: string;
+    expiresIn?:number;
 
     /**
      * Create RefreshTokenEntity
@@ -41,10 +44,16 @@ export class RefreshTokenEntity extends CredentialEntity {
         refreshToken: string,
         clientId: string,
         familyId?: string,
-        oboAssertion?: string
+        oboAssertion?: string,
+        expiresIn?: number,
     ): RefreshTokenEntity {
         const rtEntity = new RefreshTokenEntity();
 
+        if(expiresIn){
+            rtEntity.expiresIn = expiresIn
+        }
+        const currentTime = TimeUtils.nowSeconds();
+        rtEntity.cachedAt = currentTime.toString();
         rtEntity.clientId = clientId;
         rtEntity.credentialType = CredentialType.REFRESH_TOKEN;
         rtEntity.environment = environment;
